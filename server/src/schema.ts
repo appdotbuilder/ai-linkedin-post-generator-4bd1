@@ -1,55 +1,72 @@
 import { z } from 'zod';
 
-// LinkedIn post generation input schema
+// LinkedInPost schema for database records
+export const linkedInPostSchema = z.object({
+  id: z.number(),
+  user_input: z.string(),
+  generated_content: z.string(),
+  post_type: z.enum(['professional', 'thought_leadership', 'personal', 'industry_news', 'general']),
+  tone: z.enum(['formal', 'casual', 'inspirational', 'educational', 'conversational']),
+  include_hashtags: z.boolean(),
+  include_call_to_action: z.boolean(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date()
+});
+
+export type LinkedInPost = z.infer<typeof linkedInPostSchema>;
+
+// Input schema for generating new LinkedIn posts
 export const generatePostInputSchema = z.object({
-  topic: z.string().min(1, 'Topic is required'),
-  keyPoints: z.array(z.string()).min(1, 'At least one key point is required'),
-  targetAudience: z.string().min(1, 'Target audience is required'),
-  tone: z.enum(['professional', 'casual', 'enthusiastic', 'informative', 'motivational']).default('professional'),
-  postLength: z.enum(['short', 'medium', 'long']).default('medium'),
+  user_input: z.string().min(1, 'Input text is required'),
+  post_type: z.enum(['professional', 'thought_leadership', 'personal', 'industry_news', 'general']).default('general'),
+  tone: z.enum(['formal', 'casual', 'inspirational', 'educational', 'conversational']).default('conversational'),
+  include_hashtags: z.boolean().default(true),
+  include_call_to_action: z.boolean().default(false)
 });
 
 export type GeneratePostInput = z.infer<typeof generatePostInputSchema>;
 
-// Generated LinkedIn post schema
-export const linkedinPostSchema = z.object({
+// Response schema for generated posts
+export const generatePostResponseSchema = z.object({
   id: z.number(),
-  topic: z.string(),
-  keyPoints: z.array(z.string()),
-  targetAudience: z.string(),
-  tone: z.enum(['professional', 'casual', 'enthusiastic', 'informative', 'motivational']),
-  postLength: z.enum(['short', 'medium', 'long']),
-  generatedContent: z.string(),
-  createdAt: z.coerce.date(),
+  generated_content: z.string(),
+  user_input: z.string(),
+  post_type: z.enum(['professional', 'thought_leadership', 'personal', 'industry_news', 'general']),
+  tone: z.enum(['formal', 'casual', 'inspirational', 'educational', 'conversational']),
+  include_hashtags: z.boolean(),
+  include_call_to_action: z.boolean(),
+  created_at: z.coerce.date()
 });
 
-export type LinkedinPost = z.infer<typeof linkedinPostSchema>;
+export type GeneratePostResponse = z.infer<typeof generatePostResponseSchema>;
 
-// Input schema for saving generated posts
-export const savePostInputSchema = z.object({
-  topic: z.string(),
-  keyPoints: z.array(z.string()),
-  targetAudience: z.string(),
-  tone: z.enum(['professional', 'casual', 'enthusiastic', 'informative', 'motivational']),
-  postLength: z.enum(['short', 'medium', 'long']),
-  generatedContent: z.string(),
+// Schema for getting post history
+export const getPostHistoryResponseSchema = z.array(linkedInPostSchema);
+
+export type GetPostHistoryResponse = z.infer<typeof getPostHistoryResponseSchema>;
+
+// Schema for getting a single post by ID
+export const getPostByIdInputSchema = z.object({
+  id: z.number()
 });
 
-export type SavePostInput = z.infer<typeof savePostInputSchema>;
+export type GetPostByIdInput = z.infer<typeof getPostByIdInputSchema>;
 
-// Schema for retrieving saved posts
-export const getSavedPostsInputSchema = z.object({
-  limit: z.number().int().positive().max(100).default(20),
-  offset: z.number().int().nonnegative().default(0),
+// Schema for updating a post
+export const updatePostInputSchema = z.object({
+  id: z.number(),
+  generated_content: z.string().optional(),
+  post_type: z.enum(['professional', 'thought_leadership', 'personal', 'industry_news', 'general']).optional(),
+  tone: z.enum(['formal', 'casual', 'inspirational', 'educational', 'conversational']).optional(),
+  include_hashtags: z.boolean().optional(),
+  include_call_to_action: z.boolean().optional()
 });
 
-export type GetSavedPostsInput = z.infer<typeof getSavedPostsInputSchema>;
+export type UpdatePostInput = z.infer<typeof updatePostInputSchema>;
 
-// Response schema for paginated posts
-export const savedPostsResponseSchema = z.object({
-  posts: z.array(linkedinPostSchema),
-  total: z.number().int().nonnegative(),
-  hasMore: z.boolean(),
+// Schema for deleting a post
+export const deletePostInputSchema = z.object({
+  id: z.number()
 });
 
-export type SavedPostsResponse = z.infer<typeof savedPostsResponseSchema>;
+export type DeletePostInput = z.infer<typeof deletePostInputSchema>;

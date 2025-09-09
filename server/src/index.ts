@@ -3,21 +3,21 @@ import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import 'dotenv/config';
 import cors from 'cors';
 import superjson from 'superjson';
-import { z } from 'zod';
 
 // Import schemas
 import { 
   generatePostInputSchema, 
-  savePostInputSchema, 
-  getSavedPostsInputSchema 
+  getPostByIdInputSchema, 
+  updatePostInputSchema, 
+  deletePostInputSchema 
 } from './schema';
 
 // Import handlers
 import { generatePost } from './handlers/generate_post';
-import { savePost } from './handlers/save_post';
-import { getSavedPosts } from './handlers/get_saved_posts';
-import { deletePost } from './handlers/delete_post';
+import { getPostHistory } from './handlers/get_post_history';
 import { getPostById } from './handlers/get_post_by_id';
+import { updatePost } from './handlers/update_post';
+import { deletePost } from './handlers/delete_post';
 
 const t = initTRPC.create({
   transformer: superjson,
@@ -32,42 +32,29 @@ const appRouter = router({
     return { status: 'ok', timestamp: new Date().toISOString() };
   }),
 
-  // Generate a LinkedIn post using AI
+  // Generate a new LinkedIn post using AI
   generatePost: publicProcedure
     .input(generatePostInputSchema)
     .mutation(({ input }) => generatePost(input)),
 
-  // Save a generated post to the database
-  savePost: publicProcedure
-    .input(savePostInputSchema)
-    .mutation(({ input }) => savePost(input)),
+  // Get all LinkedIn posts history
+  getPostHistory: publicProcedure
+    .query(() => getPostHistory()),
 
-  // Get saved posts with pagination
-  getSavedPosts: publicProcedure
-    .input(getSavedPostsInputSchema)
-    .query(({ input }) => getSavedPosts(input)),
-
-  // Get a specific post by ID
+  // Get a specific LinkedIn post by ID
   getPostById: publicProcedure
-    .input(z.object({ id: z.number().int().positive() }))
+    .input(getPostByIdInputSchema)
     .query(({ input }) => getPostById(input)),
 
-  // Delete a saved post
-  deletePost: publicProcedure
-    .input(z.object({ id: z.number().int().positive() }))
-    .mutation(({ input }) => deletePost(input)),
+  // Update an existing LinkedIn post
+  updatePost: publicProcedure
+    .input(updatePostInputSchema)
+    .mutation(({ input }) => updatePost(input)),
 
-  // Generate and save post in one operation
-  generateAndSavePost: publicProcedure
-    .input(generatePostInputSchema)
-    .mutation(async ({ input }) => {
-      const generated = await generatePost(input);
-      const savedPost = await savePost({
-        ...input,
-        generatedContent: generated.generatedContent,
-      });
-      return savedPost;
-    }),
+  // Delete a LinkedIn post
+  deletePost: publicProcedure
+    .input(deletePostInputSchema)
+    .mutation(({ input }) => deletePost(input)),
 });
 
 export type AppRouter = typeof appRouter;
@@ -84,7 +71,13 @@ async function start() {
     },
   });
   server.listen(port);
-  console.log(`LinkedIn Post Generator TRPC server listening at port: ${port}`);
+  console.log(`TRPC server listening at port: ${port}`);
+  console.log('Available endpoints:');
+  console.log('- POST /generatePost - Generate new LinkedIn post');
+  console.log('- GET /getPostHistory - Get all posts history');
+  console.log('- GET /getPostById - Get specific post by ID');
+  console.log('- POST /updatePost - Update existing post');
+  console.log('- POST /deletePost - Delete a post');
 }
 
 start();
